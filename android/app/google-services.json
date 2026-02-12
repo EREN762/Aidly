@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "596541630097",
+    "project_id": "aidly-4d8d4",
+    "storage_bucket": "aidly-4d8d4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:596541630097:android:271e668a62df3290424130",
+        "android_client_info": {
+          "package_name": "com.example.aidly"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgeHM-mpN5L601p-FUfaQTejunO7RtRjM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
