@@ -3,13 +3,9 @@ import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
-// PROVIDI — Après avoir les écrans dans views/ (créés par Yan) et app_routes.dart,
-// remplace les imports des screens par : import 'routes/app_routes.dart';
-// et utilise routes: AppRoutes.routes dans MaterialApp.
-import 'screens/login_screen.dart';
-import 'screens/register_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/forgot_password_screen.dart';
+import 'routes/app_routes.dart';
+import 'views/home_screen.dart';
+import 'views/login_screen.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PROVIDI — Tu t’occupes de ce fichier : MaterialApp, AuthWrapper, routes.
@@ -36,23 +32,23 @@ class App extends StatelessWidget {
           ),
         ),
         home: const AuthWrapper(),
-        // PROVIDI — Après avoir créé lib/routes/app_routes.dart et tes écrans
-        // dans lib/views/, remplace ce bloc routes: par :
-        //   routes: AppRoutes.routes,
-        // et ajoute les routes pour service_detail, add_service, profile, etc.
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/register': (context) => const RegisterScreen(),
-          '/home': (context) => const HomeScreen(),
-          '/forgot-password': (context) => const ForgotPasswordScreen(),
-        },
+        routes: AppRoutes.routes,
       ),
     );
   }
 }
 
 
-//PROVIDI — Implémente cett fonctionnalité : si auth.isLoggedIn → HomeScreen, sinon → LoginScreen.
+/// Redirige vers Login si pas connecté, sinon affiche l'écran d'accueil (Home).
 class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
 
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    if (auth.isLoggedIn) {
+      return const HomeScreen();
+    }
+    return const LoginScreen();
+  }
 }

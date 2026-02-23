@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PROVIDI — Tu t’occupes de ce fichier. Les écrans sont dans lib/views/ (par Yan).
-// 1. Importe les écrans depuis views/ (LoginScreen, HomeScreen, etc.)
-// 2. Remplis la Map routes ci‑dessous
-// 3. Dans app.dart utilise routes: AppRoutes.routes
-// ═══════════════════════════════════════════════════════════════════════════
+import '../screens/forgot_password_screen.dart';
+import '../views/add_service_screen.dart';
+import '../views/home_screen.dart';
+import '../views/login_screen.dart';
+import '../views/profile_screen.dart';
+import '../views/register_screen.dart';
+import '../views/service_detail_screen.dart';
 
+/// Définition des routes de l'app. Les écrans principaux sont dans lib/views/ (Yan).
 class AppRoutes {
   AppRoutes._();
 
@@ -18,26 +20,13 @@ class AppRoutes {
   static const String addService = '/add-service';
   static const String profile = '/profile';
 
-  /// PROVIDI — Définis ici la Map des routes.
-  /// Exemple une fois tes écrans créés dans views/ :
-  ///   static Map<String, WidgetBuilder> get routes => {
-  ///     login: (context) => const LoginScreen(),
-  ///     register: (context) => const RegisterScreen(),
-  ///     home: (context) => const HomeScreen(),
-  ///     forgotPassword: (context) => const ForgotPasswordScreen(),
-  ///     serviceDetail: (context) => const ServiceDetailScreen(),
-  ///     addService: (context) => const AddServiceScreen(),
-  ///     profile: (context) => const ProfileScreen(),
-  ///   };
-  /// PROVIDI — Ajoute ici toutes les routes vers les écrans (lib/views/).
   static Map<String, WidgetBuilder> get routes => {
-        // Exemple après création des écrans dans views/ :
-        // login: (context) => const LoginScreen(),
-        // register: (context) => const RegisterScreen(),
-        // home: (context) => const HomeScreen(),
-        // forgotPassword: (context) => const ForgotPasswordScreen(),
-        // serviceDetail: (context) => const ServiceDetailScreen(),
-        // addService: (context) => const AddServiceScreen(),
-        // profile: (context) => const ProfileScreen(),
+        login: (context) => const LoginScreen(),
+        register: (context) => const RegisterScreen(),
+        home: (context) => const HomeScreen(),
+        forgotPassword: (context) => const ForgotPasswordScreen(),
+        serviceDetail: (context) => const ServiceDetailScreen(),
+        addService: (context) => const AddServiceScreen(),
+        profile: (context) => const ProfileScreen(),
       };
 }
