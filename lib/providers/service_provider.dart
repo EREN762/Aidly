@@ -1,41 +1,56 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PROVIDI — Tu t’occupes de ce fichier. Il doit appeler ServiceFirestore
-// (ou ServiceController). Expose getServices, getServicesByUser, createService,
-// updateService, deleteService, updateRating pour les écrans (views/), uploadServiceImage, uploadProfileImage, deleteServiceImage.
-// ═══════════════════════════════════════════════════════════════════════════
+import '../controllers/service_controller.dart';
+import '../models/service_model.dart';
 
 class ServiceProvider extends ChangeNotifier {
+  final ServiceController _controller = ServiceController();
 
+  Stream<List<ServiceModel>> getServices() {
+    return _controller.getServices();
+  }
 
-  /// Stream de tous les services (pour liste sur la home, etc.)
+  Stream<List<ServiceModel>> getServicesByUser(String userId) {
+    return _controller.getServicesByUser(userId);
+  }
 
+  Future<void> createService(ServiceModel service) async {
+    await _controller.createService(service);
+    notifyListeners();
+  }
 
-  /// Stream des services d’un utilisateur (pour “mes services”, profil, etc.)
+  Future<void> updateService(ServiceModel service) async {
+    await _controller.updateService(service);
+    notifyListeners();
+  }
 
+  Future<void> deleteService(String id) async {
+    await _controller.deleteService(id);
+    notifyListeners();
+  }
 
-  /// Créer un service (écran add_service)
+  Future<void> updateRating(String serviceId, double newRating) async {
+    await _controller.updateRating(serviceId, newRating);
+    notifyListeners();
+  }
 
+  Future<String> uploadServiceImage({
+    required File file,
+    required String serviceId,
+  }) {
+    return _controller.uploadServiceImage(file: file, serviceId: serviceId);
+  }
 
-  /// Mettre à jour un service (écran service_detail ou formulaire d’édition)
+  Future<String> uploadProfileImage({
+    required File file,
+    required String userId,
+  }) {
+    return _controller.uploadProfileImage(file: file, userId: userId);
+  }
 
-
-  /// Supprimer un service
-
-
-  /// Mettre à jour la note d’un service (après un avis)
-
-
-
-  /// Uploader une image de service (retourne l’URL de téléchargement)
-  
-
-
-  /// Uploader une image de profil (retourne l’URL de téléchargement)
-   
-
-
-  /// Supprimer l’image d’un service du stockage
- 
+  Future<void> deleteServiceImage(String serviceId) {
+    return _controller.deleteServiceImage(serviceId);
+  }
 }

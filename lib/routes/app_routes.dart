@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PROVIDI — Tu t’occupes de ce fichier. Les écrans sont dans lib/views/ (par Yan).
-// 1. Importe les écrans depuis views/ (LoginScreen, HomeScreen, etc.)
-// 2. Remplis la Map routes ci‑dessous
-// 3. Dans app.dart utilise routes: AppRoutes.routes
-// ═══════════════════════════════════════════════════════════════════════════
+import '../models/service_model.dart';
+import '../views/forgot_password_screen.dart';
+import '../views/add_service_screen.dart';
+import '../views/login_screen.dart';
+import '../views/main_shell.dart';
+import '../views/profile_screen.dart';
+import '../views/register_screen.dart';
+import '../views/service_detail_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -31,13 +33,18 @@ class AppRoutes {
   ///   };
   /// PROVIDI — Ajoute ici toutes les routes vers les écrans (lib/views/).
   static Map<String, WidgetBuilder> get routes => {
-        // Exemple après création des écrans dans views/ :
-        // login: (context) => const LoginScreen(),
-        // register: (context) => const RegisterScreen(),
-        // home: (context) => const HomeScreen(),
-        // forgotPassword: (context) => const ForgotPasswordScreen(),
-        // serviceDetail: (context) => const ServiceDetailScreen(),
-        // addService: (context) => const AddServiceScreen(),
-        // profile: (context) => const ProfileScreen(),
+        login: (context) => const LoginScreen(),
+        register: (context) => const RegisterScreen(),
+        home: (context) => const MainShell(),
+        forgotPassword: (context) => const ForgotPasswordScreen(),
+        serviceDetail: (context) {
+          final service = ModalRoute.of(context)?.settings.arguments as ServiceModel?;
+          if (service != null) return ServiceDetailScreen(service: service);
+          return const Scaffold(
+            body: Center(child: Text('Service requis')),
+          );
+        },
+        addService: (context) => const AddServiceScreen(),
+        profile: (context) => const ProfileScreen(),
       };
 }
