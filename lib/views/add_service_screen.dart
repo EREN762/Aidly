@@ -8,6 +8,7 @@ import '../controllers/auth_controller.dart';
 import '../models/service_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/service_provider.dart';
+import '../providers/service_extras_provider.dart';
 import 'widgets/app_spacing.dart';
 import 'widgets/custom_button.dart';
 import 'widgets/input_field.dart';
@@ -28,6 +29,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _imageUrlController = TextEditingController();
+  final _providerEmailController = TextEditingController();
 
   late final String _serviceId;
   int _currentStep = 0;
@@ -62,6 +64,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     _priceController.dispose();
     _descriptionController.dispose();
     _imageUrlController.dispose();
+    _providerEmailController.dispose();
     super.dispose();
   }
 
@@ -109,6 +112,8 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     setState(() => _isSubmitting = true);
     try {
       final provider = Provider.of<ServiceProvider>(context, listen: false);
+      final extrasProvider =
+          Provider.of<ServiceExtrasProvider>(context, listen: false);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final authController = AuthController(authProvider);
       final userId = authController.currentUserId ?? '';
@@ -131,6 +136,10 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         updatedBy: userId,
       );
       await provider.createService(service);
+      extrasProvider.setProviderEmail(
+        serviceId: _serviceId,
+        email: _providerEmailController.text.trim(),
+      );
       if (!mounted) return;
       Navigator.of(context).pop();
     } catch (error) {
@@ -300,6 +309,24 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                           return null;
                         },
                       ),
+                      const SizedBox(height: 16),
+                      InputField(
+                        label: 'Email du prestataire',
+                        controller: _providerEmailController,
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: Icons.alternate_email,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Email du prestataire requis';
+                          }
+                          final emailRegex =
+                              RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                          if (!emailRegex.hasMatch(value.trim())) {
+                            return 'Email invalide';
+                          }
+                          return null;
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -406,6 +433,10 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                       _SummaryRow(
                         label: 'Description',
                         value: _descriptionController.text,
+                      ),
+                      _SummaryRow(
+                        label: 'Email',
+                        value: _providerEmailController.text,
                       ),
                     ],
                   ),

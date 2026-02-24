@@ -25,15 +25,20 @@ class ServiceCard extends StatelessWidget {
     final hasImage = resolvedImage.isNotEmpty;
     final heroTag = 'service-${service.id}';
 
+    final cardColor = Theme.of(context).cardTheme.color ?? Colors.white;
+    final shadowColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.black.withOpacity(0.3)
+        : Colors.black.withOpacity(0.06);
+
     return PressableScale(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: shadowColor,
               blurRadius: 18,
               offset: const Offset(0, 10),
             ),

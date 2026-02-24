@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../controllers/auth_controller.dart';
 import '../models/service_model.dart';
+import '../providers/auth_provider.dart';
+import '../providers/service_extras_provider.dart';
 import '../providers/service_provider.dart';
+import '../api/subscribe_api.dart';
+import 'chat_screen.dart';
 import 'widgets/app_spacing.dart';
 import 'widgets/custom_button.dart';
 import 'widgets/pressable_scale.dart';
@@ -18,6 +23,7 @@ class ServiceDetailScreen extends StatefulWidget {
 
 class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   late double _rating;
+  bool _isSubscribing = false;
 
   @override
   void initState() {
@@ -31,6 +37,49 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       final provider = Provider.of<ServiceProvider>(context, listen: false);
       await provider.updateRating(widget.service.id, value);
     } catch (_) {}
+  }
+
+  Future<void> _subscribe() async {
+    final extrasProvider =
+        Provider.of<ServiceExtrasProvider>(context, listen: false);
+    final providerEmail =
+        extrasProvider.getProviderEmail(widget.service.id);
+    if (providerEmail == null || providerEmail.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email du prestataire introuvable.')),
+      );
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authController = AuthController(authProvider);
+    final clientId = authController.currentUserId ?? '';
+    if (clientId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Utilisateur non connecte.')),
+      );
+      return;
+    }
+
+    setState(() => _isSubscribing = true);
+    try {
+      await SubscribeApi().subscribe(
+        serviceId: widget.service.id,
+        providerEmail: providerEmail,
+        clientId: clientId,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Souscription reussie.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur souscription: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubscribing = false);
+    }
   }
 
   @override
@@ -180,10 +229,38 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: SizedBox(
         width: MediaQuery.of(context).size.width - 48,
-        child: CustomButton(
-          label: 'Contacter le prestataire',
-          icon: Icons.chat_bubble_outline,
-          onPressed: () {},
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CustomButton(
+              label: 'Souscrire',
+              icon: Icons.verified_outlined,
+              isLoading: _isSubscribing,
+              onPressed: _subscribe,
+            ),
+            const SizedBox(height: 10),
+            CustomButton(
+              label: 'Ouvrir le chat',
+              icon: Icons.chat_bubble_outline,
+              variant: ButtonVariant.outline,
+              onPressed: () {
+                final authProvider =
+                    Provider.of<AuthProvider>(context, listen: false);
+                final authController = AuthController(authProvider);
+                final clientId = authController.currentUserId ?? '';
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChatScreen(
+                      serviceId: widget.service.id,
+                      clientId: clientId,
+                      providerId: widget.service.createdBy,
+                      providerName: widget.service.title,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../controllers/service_controller.dart';
 import '../models/service_model.dart';
+import '../providers/theme_provider.dart';
 import 'service_detail_screen.dart';
 import 'widgets/app_spacing.dart';
 import 'widgets/floating_search_bar.dart';
@@ -21,11 +23,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
+  final _gridController = ScrollController();
   late final ServiceController _serviceController;
   String _query = '';
-  late final PageController _pageController;
-  int _carouselIndex = 0;
-  Timer? _carouselTimer;
+  String? _selectedCategory;
 
   final List<_CarouselItem> _carouselItems = const [
     _CarouselItem(
@@ -34,12 +35,12 @@ class _HomeScreenState extends State<HomeScreen> {
       subtitle: 'Trouvez un aide de confiance pres de chez vous.',
     ),
     _CarouselItem(
-      imagePath: 'lib/images/young-thoughtful.jpg',
+      imagePath: 'lib/images/jardinier.jpg',
       title: 'Une aide sur mesure',
       subtitle: 'Des services adaptes a votre quotidien.',
     ),
     _CarouselItem(
-      imagePath: 'lib/images/black-worker.jpg',
+      imagePath: 'lib/images/black-teleworker.jpg',
       title: 'Gagnez du temps',
       subtitle: 'Passez a l action en quelques clics.',
     ),
@@ -49,23 +50,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _serviceController = ServiceController();
-    _pageController = PageController(viewportFraction: 0.88);
-    _carouselTimer = Timer.periodic(const Duration(seconds: 6), (_) {
-      if (!mounted || !_pageController.hasClients) return;
-      final nextIndex = (_carouselIndex + 1) % _carouselItems.length;
-      _pageController.animateToPage(
-        nextIndex,
-        duration: const Duration(milliseconds: 650),
-        curve: Curves.easeInOutCubic,
-      );
-    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _pageController.dispose();
-    _carouselTimer?.cancel();
+    _gridController.dispose();
     super.dispose();
   }
 
@@ -77,12 +67,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<ServiceModel> _filterServices(List<ServiceModel> services) {
-    if (_query.trim().isEmpty) return services;
     final lowered = _query.toLowerCase();
     return services.where((service) {
       final title = service.title.toLowerCase();
       final category = service.category.toLowerCase();
-      return title.contains(lowered) || category.contains(lowered);
+      final matchesQuery = lowered.isEmpty ||
+          title.contains(lowered) ||
+          category.contains(lowered);
+      final matchesCategory = _selectedCategory == null ||
+          _selectedCategory!.isEmpty ||
+          service.category == _selectedCategory;
+      return matchesQuery && matchesCategory;
     }).toList();
   }
 
@@ -176,8 +171,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       ServiceModel(
         id: 'mock-6',
-        title: 'Mecanicien group',
-        description: 'Pour reparation de votre vehicule',
+        title: 'Mecanique express',
+        description: 'Diagnostic et reparation de votre vehicule.',
         price: 9000,
         imageUrl: 'asset:lib/images/mecanicienne.jpg',
         imageProfileUrl: '',
@@ -197,6 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
     return Scaffold(
       body: SafeArea(
@@ -228,11 +224,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                       const Spacer(),
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor:
-                            theme.colorScheme.surfaceContainerHighest,
-                        child: const Icon(Icons.person_outline, size: 18),
+                      Row(
+                        children: [
+                          _ThemeToggleButton(
+                            isDark: themeProvider.isDark,
+                            onTap: themeProvider.toggle,
+                          ),
+                          const SizedBox(width: 12),
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerHighest,
+                            child: const Icon(Icons.person_outline, size: 18),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -242,17 +247,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     onChanged: (value) => setState(() => _query = value),
                   ),
                   const SizedBox(height: 20),
-                  _Carousel(
-                    controller: _pageController,
-                    items: _carouselItems,
-                    onChanged: (index) => setState(() => _carouselIndex = index),
-                  ),
-                  const SizedBox(height: 10),
-                  _CarouselIndicators(
-                    length: _carouselItems.length,
-                    activeIndex: _carouselIndex,
-                  ),
+                  _CarouselSection(items: _carouselItems),
                   const SizedBox(height: 24),
+                  _QuickActions(
+                    selectedCategory: _selectedCategory,
+                    onSelected: (value) {
+                      setState(() {
+                        if (_selectedCategory == value) {
+                          _selectedCategory = null;
+                        } else {
+                          _selectedCategory = value;
+                        }
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 18),
                   const SectionHeader(
                     title: 'Services pour vous',
                     actionLabel: 'Voir tout',
@@ -275,6 +284,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   return ScrollConfiguration(
                     behavior: const _SmoothScrollBehavior(),
                     child: GridView.builder(
+                      key: const PageStorageKey('home-services-grid'),
+                      controller: _gridController,
                       padding: AppSpacing.screen.copyWith(top: 0),
                       physics: const BouncingScrollPhysics(
                         parent: AlwaysScrollableScrollPhysics(),
@@ -339,12 +350,214 @@ class _ShimmerGrid extends StatelessWidget {
   }
 }
 
+class _ThemeToggleButton extends StatelessWidget {
+  const _ThemeToggleButton({
+    required this.isDark,
+    required this.onTap,
+  });
+
+  final bool isDark;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF1D2A27)
+            : Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark
+              ? const Color(0xFF2AB38A)
+              : Theme.of(context).colorScheme.primary.withOpacity(0.18),
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          transitionBuilder: (child, animation) => ScaleTransition(
+            scale: animation,
+            child: child,
+          ),
+          child: Icon(
+            isDark ? Icons.nights_stay_rounded : Icons.light_mode_rounded,
+            key: ValueKey(isDark),
+            size: 18,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickActions extends StatelessWidget {
+  const _QuickActions({
+    required this.selectedCategory,
+    required this.onSelected,
+  });
+
+  final String? selectedCategory;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          _QuickChip(
+            icon: Icons.handyman_outlined,
+            label: 'Bricolage',
+            isSelected: selectedCategory == 'Bricolage',
+            onTap: () => onSelected('Bricolage'),
+          ),
+          _QuickChip(
+            icon: Icons.local_florist_outlined,
+            label: 'Jardinage',
+            isSelected: selectedCategory == 'Jardinage',
+            onTap: () => onSelected('Jardinage'),
+          ),
+          _QuickChip(
+            icon: Icons.menu_book_outlined,
+            label: 'Cours',
+            isSelected: selectedCategory == 'Cours particuliers',
+            onTap: () => onSelected('Cours particuliers'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickChip extends StatelessWidget {
+  const _QuickChip({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(right: 10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? theme.colorScheme.primary.withOpacity(0.15)
+                : theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: isSelected
+                  ? theme.colorScheme.primary
+                  : Colors.transparent,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : theme.iconTheme.color,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : theme.textTheme.bodySmall?.color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SmoothScrollBehavior extends ScrollBehavior {
   const _SmoothScrollBehavior();
 
   @override
   ScrollPhysics getScrollPhysics(BuildContext context) {
     return const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
+  }
+}
+
+class _CarouselSection extends StatefulWidget {
+  const _CarouselSection({required this.items});
+
+  final List<_CarouselItem> items;
+
+  @override
+  State<_CarouselSection> createState() => _CarouselSectionState();
+}
+
+class _CarouselSectionState extends State<_CarouselSection> {
+  late final PageController _controller;
+  int _index = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController(viewportFraction: 0.88);
+    _timer = Timer.periodic(const Duration(seconds: 6), (_) {
+      if (!mounted || !_controller.hasClients) return;
+      final nextIndex = (_index + 1) % widget.items.length;
+      _controller.animateToPage(
+        nextIndex,
+        duration: const Duration(milliseconds: 650),
+        curve: Curves.easeInOutCubic,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _Carousel(
+          controller: _controller,
+          items: widget.items,
+          onChanged: (index) => setState(() => _index = index),
+        ),
+        const SizedBox(height: 10),
+        _CarouselIndicators(
+          length: widget.items.length,
+          activeIndex: _index,
+        ),
+      ],
+    );
   }
 }
 
@@ -364,7 +577,7 @@ class _Carousel extends StatelessWidget {
     final theme = Theme.of(context);
 
     return SizedBox(
-      height: 180,
+      height: 200,
       child: PageView.builder(
         controller: controller,
         itemCount: items.length,
@@ -402,10 +615,27 @@ class _Carousel extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.asset(
-                      item.imagePath,
-                      fit: BoxFit.cover,
-                    ),
+                      Image.asset(
+                        item.imagePath,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                        filterQuality: FilterQuality.medium,
+                      ),
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.black.withOpacity(0.55),
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.35),
+                              ],
+                              begin: Alignment.bottomLeft,
+                              end: Alignment.topRight,
+                            ),
+                          ),
+                        ),
+                      ),
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
