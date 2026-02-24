@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../controllers/service_controller.dart';
 import '../models/service_model.dart';
 
+/// Pont entre UI et Backend (Firestore + Storage).
+/// Expose les fonctions Firestore et stockage pour les écrans (views/).
 class ServiceProvider extends ChangeNotifier {
   final ServiceController _controller = ServiceController();
 

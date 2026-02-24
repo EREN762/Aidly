@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "D:/All Tp/flutter_tp/Aidly/linux"
+    "cmake.sourceDirectory": "D:/All Tp/flutter_tp/Aidly/linux",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
