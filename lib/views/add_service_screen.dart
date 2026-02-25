@@ -226,7 +226,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        value: _selectedCategory,
+                        initialValue: _selectedCategory,
                         decoration: const InputDecoration(
                           labelText: 'Categorie',
                           prefixIcon: Icon(Icons.category_outlined),
@@ -260,7 +260,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        value: _selectedSubCategory,
+                        initialValue: _selectedSubCategory,
                         decoration: const InputDecoration(
                           labelText: 'Sous-categorie',
                           prefixIcon: Icon(Icons.tune),

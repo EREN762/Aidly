@@ -30,17 +30,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<_CarouselItem> _carouselItems = const [
     _CarouselItem(
-      imagePath: 'lib/images/architecte.jpg',
       title: 'Des talents de proximite',
       subtitle: 'Trouvez un aide de confiance pres de chez vous.',
     ),
     _CarouselItem(
-      imagePath: 'lib/images/jardinier.jpg',
       title: 'Une aide sur mesure',
       subtitle: 'Des services adaptes a votre quotidien.',
     ),
     _CarouselItem(
-      imagePath: 'lib/images/black-teleworker.jpg',
       title: 'Gagnez du temps',
       subtitle: 'Passez a l action en quelques clics.',
     ),
@@ -71,10 +68,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return services.where((service) {
       final title = service.title.toLowerCase();
       final category = service.category.toLowerCase();
-      final matchesQuery = lowered.isEmpty ||
+      final matchesQuery =
+          lowered.isEmpty ||
           title.contains(lowered) ||
           category.contains(lowered);
-      final matchesCategory = _selectedCategory == null ||
+      final matchesCategory =
+          _selectedCategory == null ||
           _selectedCategory!.isEmpty ||
           service.category == _selectedCategory;
       return matchesQuery && matchesCategory;
@@ -89,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: 'Bricolage express',
         description: 'Montage, fixations et petites reparations.',
         price: 8000,
-        imageUrl: 'asset:lib/images/renovateur, batissuer.jpg',
+        imageUrl: '',
         imageProfileUrl: '',
         category: 'Bricolage',
         subCategory: 'Menuiserie',
@@ -106,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: 'Cours particuliers',
         description: 'Mathematiques et sciences pour lyceens.',
         price: 12000,
-        imageUrl: 'asset:lib/images/informaticien.jpeg',
+        imageUrl: '',
         imageProfileUrl: '',
         category: 'Cours particuliers',
         subCategory: 'Maths',
@@ -123,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: 'Jardinage chic',
         description: 'Tonte, entretien et amenagement.',
         price: 15000,
-        imageUrl: 'asset:lib/images/gardener-apron.jpg',
+        imageUrl: '',
         imageProfileUrl: '',
         category: 'Jardinage',
         subCategory: 'Entretien',
@@ -140,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: 'Menage premium',
         description: 'Nettoyage complet et rangement.',
         price: 10000,
-        imageUrl: 'asset:lib/images/girl-with-buns.jpg',
+        imageUrl: '',
         imageProfileUrl: '',
         category: 'Menage',
         subCategory: 'Nettoyage',
@@ -157,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: 'Courses & livraisons',
         description: 'Livraison rapide et fiable.',
         price: 7000,
-        imageUrl: 'asset:lib/images/closeup-shot.jpg',
+        imageUrl: '',
         imageProfileUrl: '',
         category: 'Demarche et courses',
         subCategory: 'Livraison',
@@ -174,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: 'Mecanique express',
         description: 'Diagnostic et reparation de votre vehicule.',
         price: 9000,
-        imageUrl: 'asset:lib/images/mecanicienne.jpg',
+        imageUrl: '',
         imageProfileUrl: '',
         category: 'Demarche et courses',
         subCategory: 'Administratif',
@@ -292,11 +291,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.72,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.72,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
                       itemCount: services.length,
                       itemBuilder: (context, index) {
                         final service = services[index];
@@ -351,10 +350,7 @@ class _ShimmerGrid extends StatelessWidget {
 }
 
 class _ThemeToggleButton extends StatelessWidget {
-  const _ThemeToggleButton({
-    required this.isDark,
-    required this.onTap,
-  });
+  const _ThemeToggleButton({required this.isDark, required this.onTap});
 
   final bool isDark;
   final VoidCallback onTap;
@@ -380,10 +376,8 @@ class _ThemeToggleButton extends StatelessWidget {
         onTap: onTap,
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 250),
-          transitionBuilder: (child, animation) => ScaleTransition(
-            scale: animation,
-            child: child,
-          ),
+          transitionBuilder: (child, animation) =>
+              ScaleTransition(scale: animation, child: child),
           child: Icon(
             isDark ? Icons.nights_stay_rounded : Icons.light_mode_rounded,
             key: ValueKey(isDark),
@@ -552,10 +546,7 @@ class _CarouselSectionState extends State<_CarouselSection> {
           onChanged: (index) => setState(() => _index = index),
         ),
         const SizedBox(height: 10),
-        _CarouselIndicators(
-          length: widget.items.length,
-          activeIndex: _index,
-        ),
+        _CarouselIndicators(length: widget.items.length, activeIndex: _index),
       ],
     );
   }
@@ -593,10 +584,7 @@ class _Carousel extends StatelessWidget {
                 value = (1 - ((controller.page ?? index) - index).abs() * 0.08)
                     .clamp(0.92, 1.0);
               }
-              return Transform.scale(
-                scale: value,
-                child: child,
-              );
+              return Transform.scale(scale: value, child: child);
             },
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 6),
@@ -615,27 +603,45 @@ class _Carousel extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                      Image.asset(
-                        item.imagePath,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.topCenter,
-                        filterQuality: FilterQuality.medium,
+                    // Gradient placeholder au lieu d'image
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(
+                              context,
+                            ).colorScheme.primary.withOpacity(0.6),
+                            Theme.of(
+                              context,
+                            ).colorScheme.secondary.withOpacity(0.6),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                       ),
-                      Positioned.fill(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.black.withOpacity(0.55),
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.35),
-                              ],
-                              begin: Alignment.bottomLeft,
-                              end: Alignment.topRight,
-                            ),
+                      child: Center(
+                        child: Icon(
+                          Icons.image_outlined,
+                          size: 48,
+                          color: Colors.white.withOpacity(0.5),
+                        ),
+                      ),
+                    ),
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.black.withOpacity(0.55),
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.35),
+                            ],
+                            begin: Alignment.bottomLeft,
+                            end: Alignment.topRight,
                           ),
                         ),
                       ),
+                    ),
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -684,10 +690,7 @@ class _Carousel extends StatelessWidget {
 }
 
 class _CarouselIndicators extends StatelessWidget {
-  const _CarouselIndicators({
-    required this.length,
-    required this.activeIndex,
-  });
+  const _CarouselIndicators({required this.length, required this.activeIndex});
 
   final int length;
   final int activeIndex;
@@ -716,13 +719,8 @@ class _CarouselIndicators extends StatelessWidget {
 }
 
 class _CarouselItem {
-  const _CarouselItem({
-    required this.imagePath,
-    required this.title,
-    required this.subtitle,
-  });
+  const _CarouselItem({required this.title, required this.subtitle});
 
-  final String imagePath;
   final String title;
   final String subtitle;
 }

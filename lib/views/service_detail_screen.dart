@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/auth_controller.dart';
+import '../helpers/email_helper.dart';
 import '../models/service_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/service_extras_provider.dart';
@@ -40,10 +41,11 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   }
 
   Future<void> _subscribe() async {
-    final extrasProvider =
-        Provider.of<ServiceExtrasProvider>(context, listen: false);
-    final providerEmail =
-        extrasProvider.getProviderEmail(widget.service.id);
+    final extrasProvider = Provider.of<ServiceExtrasProvider>(
+      context,
+      listen: false,
+    );
+    final providerEmail = extrasProvider.getProviderEmail(widget.service.id);
     if (providerEmail == null || providerEmail.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Email du prestataire introuvable.')),
@@ -52,8 +54,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     }
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final authController = AuthController(authProvider);
-    final clientId = authController.currentUserId ?? '';
+    final clientId = authProvider.currentUser?.uid ?? '';
     if (clientId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Utilisateur non connecte.')),
@@ -69,16 +70,52 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         clientId: clientId,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Souscription reussie.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Souscription reussie.')));
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur souscription: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur souscription: $error')));
     } finally {
       if (mounted) setState(() => _isSubscribing = false);
+    }
+  }
+
+  Future<void> _sendEmail() async {
+    final extrasProvider = Provider.of<ServiceExtrasProvider>(
+      context,
+      listen: false,
+    );
+    final providerEmail = extrasProvider.getProviderEmail(widget.service.id);
+
+    if (providerEmail == null || providerEmail.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email du prestataire introuvable.')),
+      );
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final clientName = authProvider.currentUser?.email ?? '';
+
+    final success = await EmailHelper.sendServiceInquiry(
+      providerEmail: providerEmail,
+      serviceName: widget.service.title,
+      servicePrice: '${widget.service.price.toStringAsFixed(0)} FC',
+      serviceCategory: widget.service.category,
+      clientName: clientName,
+    );
+
+    if (!mounted) return;
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible d\'ouvrir l\'application mail.'),
+        ),
+      );
     }
   }
 
@@ -240,12 +277,21 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
             ),
             const SizedBox(height: 10),
             CustomButton(
+              label: 'Contacter par email',
+              icon: Icons.mail_outline,
+              variant: ButtonVariant.outline,
+              onPressed: _sendEmail,
+            ),
+            const SizedBox(height: 10),
+            CustomButton(
               label: 'Ouvrir le chat',
               icon: Icons.chat_bubble_outline,
               variant: ButtonVariant.outline,
               onPressed: () {
-                final authProvider =
-                    Provider.of<AuthProvider>(context, listen: false);
+                final authProvider = Provider.of<AuthProvider>(
+                  context,
+                  listen: false,
+                );
                 final authController = AuthController(authProvider);
                 final clientId = authController.currentUserId ?? '';
                 Navigator.of(context).push(

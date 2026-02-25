@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/auth_controller.dart';
 import '../controllers/service_controller.dart';
 import '../models/service_model.dart';
 import '../providers/auth_provider.dart';
+import '../providers/service_provider.dart';
 import 'login_screen.dart';
 import 'service_detail_screen.dart';
 import 'widgets/app_spacing.dart';
@@ -23,11 +27,51 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late final ServiceController _serviceController;
+  bool _isUploadingProfile = false;
+  String? _profileImageUrl;
 
   @override
   void initState() {
     super.initState();
     _serviceController = ServiceController();
+  }
+
+  Future<void> _uploadProfileImage() async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 75,
+    );
+    if (file == null) return;
+
+    setState(() => _isUploadingProfile = true);
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('Utilisateur non connecté');
+      }
+
+      final provider = Provider.of<ServiceProvider>(context, listen: false);
+      final url = await provider.uploadProfileImage(
+        file: File(file.path),
+        userId: userId,
+      );
+
+      if (!mounted) return;
+      setState(() => _profileImageUrl = url);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Photo de profil mise à jour !')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $error')));
+    } finally {
+      if (mounted) setState(() => _isUploadingProfile = false);
+    }
   }
 
   @override
@@ -38,9 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final userId = controller.currentUserId;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mon profil'),
-      ),
+      appBar: AppBar(title: const Text('Mon profil')),
       body: SafeArea(
         child: ListView(
           padding: AppSpacing.screen,
@@ -53,9 +95,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Row(
                       children: [
-                        const CircleAvatar(
-                          radius: 28,
-                          child: Icon(Icons.person, size: 28),
+                        Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 28,
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainerHighest,
+                              backgroundImage:
+                                  _profileImageUrl != null &&
+                                      _profileImageUrl!.isNotEmpty
+                                  ? NetworkImage(_profileImageUrl!)
+                                  : null,
+                              child:
+                                  _profileImageUrl == null ||
+                                      _profileImageUrl!.isEmpty
+                                  ? const Icon(Icons.person, size: 28)
+                                  : null,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: _isUploadingProfile
+                                    ? null
+                                    : _uploadProfileImage,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: _isUploadingProfile
+                                      ? SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  theme.colorScheme.onPrimary,
+                                                ),
+                                          ),
+                                        )
+                                      : Icon(
+                                          Icons.camera_alt,
+                                          size: 14,
+                                          color: theme.colorScheme.onPrimary,
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -97,7 +187,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     CustomButton(
                       label: 'Modifier mon profil',
                       variant: ButtonVariant.outline,
-                      onPressed: () {},
+                      isLoading: _isUploadingProfile,
+                      onPressed: _uploadProfileImage,
                     ),
                   ],
                 ),
