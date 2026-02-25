@@ -726,3 +726,4 @@ class _CarouselItem {
   final String title;
   final String subtitle;
 }
+
