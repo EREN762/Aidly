@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Écran mot de passe oublié — yan à compléter .
+/// Écran mot de passe oublié — à compléter (UI/UX).
 
 class ForgotPasswordScreen extends StatelessWidget {
   const ForgotPasswordScreen({super.key});

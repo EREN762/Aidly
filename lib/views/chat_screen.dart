@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../api/chat_api.dart';
 import '../providers/chat_provider.dart';
+import '../services/chat_firestore_service.dart';
 import '../ui_models/chat_message.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -27,14 +27,11 @@ class _ChatScreenState extends State<ChatScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   int _lastMessageCount = 0;
-
-  @override
-  void initState() {
-    super.initState();
-  }
+  ChatProvider? _chatProvider;
 
   @override
   void dispose() {
+    _chatProvider?.stopListening();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -53,11 +50,21 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final chatId = ChatFirestoreService.chatId(
+      serviceId: widget.serviceId,
+      clientId: widget.clientId,
+      providerId: widget.providerId,
+    );
     return ChangeNotifierProvider(
-      create: (_) => ChatProvider(ChatApi())..loadMessages(widget.serviceId),
+      create: (_) => ChatProvider(
+        ChatFirestoreService(),
+        chatId: chatId,
+        serviceId: widget.serviceId,
+      )..startListening(),
       child: Builder(
         builder: (context) {
           final provider = context.watch<ChatProvider>();
+          _chatProvider ??= provider;
           final messages = provider.messages;
           if (messages.length != _lastMessageCount) {
             _lastMessageCount = messages.length;
@@ -70,10 +77,16 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             body: Column(
               children: [
+                if (provider.error != null)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      provider.error!,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ),
                 Expanded(
-                  child: provider.isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : NotificationListener<ScrollEndNotification>(
+                  child: NotificationListener<ScrollEndNotification>(
                           onNotification: (_) {
                             _scrollToBottom();
                             return false;
@@ -105,7 +118,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     final text = _messageController.text;
                     _messageController.clear();
                     await provider.sendMessage(
-                      serviceId: widget.serviceId,
                       senderId: widget.clientId,
                       receiverId: widget.providerId,
                       content: text,

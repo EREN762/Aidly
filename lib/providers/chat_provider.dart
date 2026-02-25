@@ -1,52 +1,73 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-import '../api/chat_api.dart';
+import '../services/chat_firestore_service.dart';
 import '../ui_models/chat_message.dart';
 
+/// Provider de chat temps réel (Firestore).
+/// Appeler [startListening] à l’ouverture du chat et [stopListening] au démontage.
 class ChatProvider extends ChangeNotifier {
-  ChatProvider(this._chatApi);
+  ChatProvider(this._service, {required this.chatId, required this.serviceId});
 
-  final ChatApi _chatApi;
+  final ChatFirestoreService _service;
+  final String chatId;
+  final String serviceId;
 
+  StreamSubscription<List<ChatMessage>>? _subscription;
   final List<ChatMessage> _messages = [];
-  bool _isLoading = false;
   bool _isSending = false;
+  String? _error;
 
   List<ChatMessage> get messages => List.unmodifiable(_messages);
-  bool get isLoading => _isLoading;
   bool get isSending => _isSending;
+  String? get error => _error;
 
-  Future<void> loadMessages(String serviceId) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final data = await _chatApi.fetchMessages(serviceId);
-      _messages
-        ..clear()
-        ..addAll(data);
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+  /// Démarre l’écoute temps réel des messages.
+  void startListening() {
+    _error = null;
+    _subscription?.cancel();
+    _subscription = _service.streamMessages(chatId).listen(
+      (list) {
+        _messages
+          ..clear()
+          ..addAll(list);
+        notifyListeners();
+      },
+      onError: (e) {
+        _error = e.toString();
+        notifyListeners();
+      },
+    );
+  }
+
+  /// Arrête l’écoute (à appeler au dispose du ChatScreen).
+  void stopListening() {
+    _subscription?.cancel();
+    _subscription = null;
   }
 
   Future<void> sendMessage({
-    required String serviceId,
     required String senderId,
     required String receiverId,
     required String content,
   }) async {
     if (content.trim().isEmpty) return;
     _isSending = true;
+    _error = null;
     notifyListeners();
     try {
-      final message = await _chatApi.sendMessage(
+      await _service.sendMessage(
+        chatId: chatId,
         serviceId: serviceId,
         senderId: senderId,
         receiverId: receiverId,
-        content: content.trim(),
+        content: content,
       );
-      _messages.add(message);
+      // Le stream met à jour _messages automatiquement
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
     } finally {
       _isSending = false;
       notifyListeners();
